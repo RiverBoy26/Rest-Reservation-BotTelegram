@@ -25,21 +25,28 @@ async def get_schedule(message: Message):
 #Выбор времени
 @router.message(F.text == "Выбрать время")
 async def get_time1(message: Message):
-    await message.answer('Выбрите время:', reply_markup=kb.time1)
+    await message.answer('Выбрите время:', reply_markup=kb.time)
 
 @router.callback_query(F.data == 'first_quarter_time')
 async def first_quarter_time(callback: CallbackQuery):
     await callback.answer('')
-    await callback.message.reply('re', reply_markup=kb.time2)
+    await callback.message.edit_text('Выберите точное время:', reply_markup=kb.first_time())
 
 @router.callback_query(F.data == 'second_quarter_time')
 async def second_quarter_time(callback: CallbackQuery):
     await callback.answer('2')
+    await callback.message.edit_text('Выберите точное время:', reply_markup=kb.second_time())
 
 @router.callback_query(F.data == 'third_quarter_time')
 async def third_quarter_time(callback: CallbackQuery):
     await callback.answer('3')
+    await callback.message.edit_text('Выберите точное время:', reply_markup=kb.third_time())
 
 @router.callback_query(F.data == 'fourth_quarter_time')
 async def fourth_quarter_time(callback: CallbackQuery):
-    await callback.answer('4')
+    await callback.answer('penis')
+    await callback.message.edit_text('Выберите точное время:', reply_markup=kb.fourth_time())
+
+@router.message(F.text == "Вернуться назад")
+async def go_start(message: Message):
+    await message.answer("/start")
