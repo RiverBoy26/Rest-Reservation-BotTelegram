@@ -24,6 +24,7 @@ class Table(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     table_number: Mapped[int] = mapped_column()
+    number_of_seats: Mapped[int] = mapped_column()
     description: Mapped[str] = mapped_column(String(255))
 
 
@@ -31,7 +32,7 @@ class Availability(Base):
     __tablename__ = 'availability'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    table_id: Mapped[int] = mapped_column(ForeignKey('tables.id'))
+    table_id: Mapped[int] = mapped_column(ForeignKey('tables.table_number'))
     date: Mapped[Date] = mapped_column(Date, nullable=True)
     hour: Mapped[int] = mapped_column()
     is_occupied: Mapped[bool] = mapped_column(default=False, server_default="0")
