@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, String, ForeignKey, DateTime
+from sqlalchemy import BigInteger, String, ForeignKey, Date
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
@@ -24,18 +24,18 @@ class Table(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     table_number: Mapped[int] = mapped_column()
-    description: Mapped[str] = mapped_column(String(50))
+    description: Mapped[str] = mapped_column(String(255))
 
 
-class Avialability(Base):
-    __tablename__ = 'avialability'
+class Availability(Base):
+    __tablename__ = 'availability'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     table_id: Mapped[int] = mapped_column(ForeignKey('tables.id'))
-    date: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
+    date: Mapped[Date] = mapped_column(Date, nullable=True)
     hour: Mapped[int] = mapped_column()
-    is_occupied: Mapped[bool] = mapped_column(default=False)
-    occupied_now: Mapped[bool] = mapped_column(default=False)
+    is_occupied: Mapped[bool] = mapped_column(default=False, server_default="0")
+    occupied_now: Mapped[bool] = mapped_column(default=False, server_default="0")
 
 
 async def async_mainbd():
