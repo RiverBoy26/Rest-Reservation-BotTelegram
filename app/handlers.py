@@ -20,12 +20,12 @@ async def get_tables(message: Message):
 
 @router.message(F.text == "Расписание")
 async def get_schedule(message: Message):
-    await message.answer('Выбрите действие для расписания:', reply_markup=kb.schedule)
+    await message.answer('Выберите действие для расписания:', reply_markup=kb.schedule)
 
 #Выбор времени
 @router.message(F.text == "Выбрать время")
 async def get_time1(message: Message):
-    await message.answer('Выбрите время:', reply_markup=kb.time)
+    await message.answer('Выберите время:', reply_markup=kb.time)
 
 @router.callback_query(F.data == 'first_quarter_time')
 async def first_quarter_time(callback: CallbackQuery):
@@ -50,3 +50,9 @@ async def fourth_quarter_time(callback: CallbackQuery):
 @router.message(F.text == "Вернуться назад")
 async def go_start(message: Message):
     await message.answer("/start")
+
+
+@router.callback_query(F.data == "time")
+async def print_time(callback: CallbackQuery):
+    await callback.answer("")
+    await callback.message.answer(text="Одинаковый текст для всех столиков")

@@ -38,29 +38,29 @@ time4 = ["20:00", "21:00", "22:00", "23:00"]
 def first_time():
     tlist = InlineKeyboardBuilder()
     for t in time1:
-        tlist.add(InlineKeyboardButton(text=t, callback_data=f"time_{t}"))
+        tlist.add(InlineKeyboardButton(text=t, callback_data="time"))
     return tlist.adjust(2).as_markup()
 
 def first_time():
     tlist = InlineKeyboardBuilder()
     for t in time1:
-        tlist.add(InlineKeyboardButton(text=t, callback_data=f"time_{t}"))
+        tlist.add(InlineKeyboardButton(text=t, callback_data="time"))
     return tlist.adjust(2).as_markup()
 
 def second_time():
     tlist = InlineKeyboardBuilder()
     for t in time2:
-        tlist.add(InlineKeyboardButton(text=t, callback_data=f"time_{t}"))
+        tlist.add(InlineKeyboardButton(text=t, callback_data="time"))
     return tlist.adjust(2).as_markup()
 
 def third_time():
     tlist = InlineKeyboardBuilder()
     for t in time3:
-        tlist.add(InlineKeyboardButton(text=t, callback_data=f"time_{t}"))
+        tlist.add(InlineKeyboardButton(text=t, callback_data="time"))
     return tlist.adjust(2).as_markup()
 
 def fourth_time():
     tlist = InlineKeyboardBuilder()
     for t in time4:
-        tlist.add(InlineKeyboardButton(text=t, callback_data=f"time_{t}"))
+        tlist.add(InlineKeyboardButton(text=t, callback_data="time"))
     return tlist.adjust(2).as_markup()
