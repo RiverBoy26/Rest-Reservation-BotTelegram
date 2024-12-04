@@ -14,6 +14,20 @@ tables = ReplyKeyboardMarkup(keyboard=[
                             resize_keyboard=True,
                             input_field_placeholder="Столики")
 
+go_back = ReplyKeyboardMarkup(keyboard=[
+    [KeyboardButton(text='Вернуться назад')]
+],
+                            resize_keyboard=True)
+
+table_info = ReplyKeyboardMarkup(keyboard=[
+    [KeyboardButton(text='Свободен')],
+    [KeyboardButton(text='Занят')],
+    [KeyboardButton(text='Забронировать')],
+    [KeyboardButton(text='Вернуться назад')]
+],
+                            resize_keyboard=True,
+                            input_field_placeholder="Столик...")
+
 schedule = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='Вернуться назад')],
     [KeyboardButton(text='Выбрать время')]

@@ -1,30 +1,67 @@
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.context import FSMContext
 
 import app.keyboards as kb
 
 router = Router()
 
+class Form(StatesGroup):
+    '''Поле номера столика для редактирования'''
+    table_id = State()
+
 @router.message(CommandStart())
-async def cmd_start(message: Message):
-    await message.answer('Привет!', reply_markup=kb.main)
+async def main_menu(message: Message):
+    '''Главное меню'''
+    await message.answer(f"Здравствуйте!\n Выберите действие.", reply_markup=kb.main)
 
 @router.message(Command('help'))
 async def get_help(message: Message):
+    '''Сообщение со справочным материалом'''
     await message.answer('/start - начало работы!')
+
 
 @router.message(F.text == "Столики")
 async def get_tables(message: Message):
-    await message.answer('текст про столы', reply_markup=kb.tables)
+    '''Получение информации о столиках'''
+    await message.answer(f'Столик №1 - 3 места, стулья, у окна\n' +
+                        'Столик №2 - 2 места, стулья, рядом с входом\n' +
+                        'Столик №3 - 4 места, диваны и стулья, центральное расположение\n' +
+                        'Столик №4 - 2 места, стулья, у окна\n' +
+                        'Столик №5 - 2 места, около уборной, стулья\n' +
+                        'Столик №6 - 3 места, стулья, центральная зона\n' +
+                        'Столик №7 - 4 места у окна, диваны и стулья\n' +
+                        'Столик №8 - 2 места, стулья, центральная зона\n' +
+                        'Столик №9 - 3 места, стулья, центральная зона\n' +
+                        'Столик №10 - 2 места, стулья, у окна', reply_markup=kb.tables)
+
+@router.message(F.text == "Изменить")
+async def table_choose(message: Message, state: FSMContext):
+    '''Выбор столика'''
+    await message.answer('Выберите столик...', reply_markup=kb.go_back)
+    await state.set_state(Form.table_id)
+
+@router.message(Form.table_id)
+async def edit_table(message: Message, state: FSMContext):
+    '''Изменение параметров столика'''
+    await state.update_data(table_id=message.text)
+    await message.answer(f"Выберите действие для столика №{await state.get_value('table_id')}:", reply_markup=kb.table_info)
+    await state.clear()
+    
+
+
 
 @router.message(F.text == "Расписание")
 async def get_schedule(message: Message):
+    '''Выбор действия с расписанием'''
     await message.answer('Выберите действие для расписания:', reply_markup=kb.schedule)
 
 #Выбор времени
 @router.message(F.text == "Выбрать время")
-async def get_time1(message: Message):
+async def get_time(message: Message):
+    '''Выбор времени'''
     await message.answer('Выберите время:', reply_markup=kb.time)
 
 @router.callback_query(F.data == 'first_quarter_time')
@@ -44,15 +81,15 @@ async def third_quarter_time(callback: CallbackQuery):
 
 @router.callback_query(F.data == 'fourth_quarter_time')
 async def fourth_quarter_time(callback: CallbackQuery):
-    await callback.answer('penis')
+    await callback.answer('4')
     await callback.message.edit_text('Выберите точное время:', reply_markup=kb.fourth_time())
 
 @router.message(F.text == "Вернуться назад")
 async def go_start(message: Message):
-    await message.answer("/start")
+    message.reply("Кнопка в разработке")
 
 
 @router.callback_query(F.data == "time")
 async def print_time(callback: CallbackQuery):
     await callback.answer("")
-    await callback.message.answer(text="Одинаковый текст для всех столиков")
+    await callback.message.reply(text="Одинаковый текст для всех столиков")
