@@ -18,11 +18,10 @@ async def set_user(tg_id: int) -> None:
 
 
 # Получение всей информации о столиках (id, описание)
-async def get_tables_inf():
+async def get_tables():
     async with async_session() as session:
         tables = await session.scalars(select(Table))
-        return [{"id": table.id, "description": table.description} for table in tables.all()]
-
+        return tables.all()
 
 # Получение bool столик занят по времени или нет
 async def get_is_occupied(table_id):
