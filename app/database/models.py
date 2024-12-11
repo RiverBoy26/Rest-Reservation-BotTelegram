@@ -28,15 +28,23 @@ class Table(Base):
     description: Mapped[str] = mapped_column(String(255))
 
 
-class Availability(Base):
-    __tablename__ = 'availability'
+class Tables_is_occupied_now(Base):
+    __tablename__ = 'tables_occupancy'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    table_id: Mapped[int] = mapped_column(ForeignKey('tables.table_number'))
+    occupied_now: Mapped[bool] = mapped_column(default=False, server_default="0")
+
+
+class Table_reservation(Base):
+    __tablename__ = 'tables_reservation'
 
     id: Mapped[int] = mapped_column(primary_key=True)
     table_id: Mapped[int] = mapped_column(ForeignKey('tables.table_number'))
     date: Mapped[Date] = mapped_column(Date, nullable=True)
     hour: Mapped[int] = mapped_column(nullable=True)
+    minutes: Mapped[int] = mapped_column(nullable=True)
     is_occupied: Mapped[bool] = mapped_column(default=False, server_default="0")
-    occupied_now: Mapped[bool] = mapped_column(default=False, server_default="0")
 
 
 async def async_mainbd():
