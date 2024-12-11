@@ -18,10 +18,10 @@ async def set_user(tg_id: int) -> None:
 
 
 # Получение всей информации о столиках (id, описание)
-async def get_tables():
+async def get_tables_inf():
     async with async_session() as session:
         tables = await session.scalars(select(Table))
-        return tables.all()
+        return [{"id": table.id, "description": table.description} for table in tables.all()]
 
 
 # Получение bool столик занят по времени или нет
@@ -46,3 +46,26 @@ async def get_is_occupied_now(table_id):
             )
         )
         return result is not None
+
+
+async def get_tables_with_status():
+    async with async_session() as session:
+        query = (
+            select(Table, Availability.is_occupied, Availability.occupied_now)
+            .join(Availability, Table.id == Availability.table_id, isouter=True)
+        )
+        result = await session.execute(query)
+
+        tables = []
+        for table, is_occupied, occupied_now in result:
+            status = "свободен"
+            if is_occupied:
+                status = "забронирован"
+            if occupied_now:
+                status = "занят"
+            tables.append({
+                "id": table.id,
+                "description": table.description,
+                "status": status
+            })
+        return tables
