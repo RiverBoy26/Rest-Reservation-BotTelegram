@@ -25,7 +25,7 @@ class Form2(StatesGroup):
 @router.message(F.text == "Вернуться в главное меню")
 async def main_menu(message: Message):
     '''Главное меню'''
-    await message.answer(f"Здравствуйте!\n Выберите действие.", reply_markup=kb.main)
+    await message.answer(f"Здравствуйте!\nВыберите действие.", reply_markup=kb.main)
 
 @router.message(Command('help'))
 async def get_help(message: Message):
