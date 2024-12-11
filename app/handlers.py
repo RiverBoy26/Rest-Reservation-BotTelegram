@@ -5,6 +5,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
 import app.keyboards as kb
+from app.database.requests import get_tables_with_status
 
 router = Router()
 
@@ -15,7 +16,7 @@ class Form(StatesGroup):
 @router.message(CommandStart())
 async def main_menu(message: Message):
     '''Главное меню'''
-    await message.answer(f"Здравствуйте!\n Выберите действие.", reply_markup=kb.main)
+    await message.answer(f"Здравствуйте!\nВыберите действие.", reply_markup=kb.main)
 
 @router.message(Command('help'))
 async def get_help(message: Message):
@@ -26,16 +27,17 @@ async def get_help(message: Message):
 @router.message(F.text == "Столики")
 async def get_tables(message: Message):
     '''Получение информации о столиках'''
-    await message.answer(f'Столик №1 - 3 места, стулья, у окна\n' +
-                        'Столик №2 - 2 места, стулья, рядом с входом\n' +
-                        'Столик №3 - 4 места, диваны и стулья, центральное расположение\n' +
-                        'Столик №4 - 2 места, стулья, у окна\n' +
-                        'Столик №5 - 2 места, около уборной, стулья\n' +
-                        'Столик №6 - 3 места, стулья, центральная зона\n' +
-                        'Столик №7 - 4 места у окна, диваны и стулья\n' +
-                        'Столик №8 - 2 места, стулья, центральная зона\n' +
-                        'Столик №9 - 3 места, стулья, центральная зона\n' +
-                        'Столик №10 - 2 места, стулья, у окна', reply_markup=kb.tables)
+    tables = await get_tables_with_status()
+
+    if not tables:
+        await message.answer("Нет доступных столиков.")
+        return
+
+    tables_info = "\n".join([
+        f"Столик №{table['id']}: {table['description']} - {table['status']}"
+        for table in tables
+    ])
+    await message.answer(f"Список столиков:\n\n{tables_info}", reply_markup=kb.tables)
 
 @router.message(F.text == "Изменить")
 async def table_choose(message: Message, state: FSMContext):
@@ -49,7 +51,6 @@ async def edit_table(message: Message, state: FSMContext):
     await state.update_data(table_id=message.text)
     await message.answer(f"Выберите действие для столика №{await state.get_value('table_id')}:", reply_markup=kb.table_info)
     await state.clear()
-    
 
 
 
