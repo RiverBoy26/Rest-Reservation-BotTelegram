@@ -22,16 +22,16 @@ class User(Base):
 class Table(Base):
     __tablename__ = 'tables'
 
-    id: Mapped[int] = mapped_column()
-    table_number: Mapped[int] = mapped_column(primary_key=True)
-    number_of_seats: Mapped[int] = mapped_column()
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    table_number: Mapped[int] = mapped_column(unique=True, nullable=False)
+    number_of_seats: Mapped[int] = mapped_column(nullable=False)
     description: Mapped[str] = mapped_column(String(255))
 
 
 class Tables_is_occupied_now(Base):
     __tablename__ = 'tables_occupancy'
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     table_id: Mapped[int] = mapped_column(ForeignKey('tables.table_number'))
     occupied_now: Mapped[bool] = mapped_column(default=False, server_default="0")
 
@@ -39,7 +39,7 @@ class Tables_is_occupied_now(Base):
 class Table_reservation(Base):
     __tablename__ = 'tables_reservation'
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     table_id: Mapped[int] = mapped_column(ForeignKey('tables.table_number'))
     date: Mapped[Date] = mapped_column(Date, nullable=True)
     hour: Mapped[int] = mapped_column(nullable=True)

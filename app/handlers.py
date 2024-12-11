@@ -53,9 +53,11 @@ class t_add():
     async def edit_add(message: Message, state: FSMContext):
         '''Проверка введённой информации и добавление в бд'''
         info = [message for message in str(message.text).split()]
+        description = ' '.join(info[2:])
         all_tables = await rq.get_tables()
         list_num_tables = [t.table_number for t in all_tables]
-        if (info[0].isdigit() and int(info[0]) > 0 and int(info[0]) not in list_num_tables) and (info[1].isdigit() and int(info[1]) > 0) and len(info[2]) <= 255:
+        if (info[0].isdigit() and int(info[0]) > 0 and int(info[0]) not in list_num_tables) and (info[1].isdigit() and int(info[1]) > 0) and len(description) <= 255:
+            await rq.set_table(info[0], info[1], description)
             await state.update_data(info_of_table=message.text)
             await message.answer('Столик успешно добавлен!')
             await state.clear()
@@ -75,6 +77,7 @@ class t_delete():
         all_tables = await rq.get_tables()
         list_num_tables = [t.table_number for t in all_tables]
         if num.isdigit() and int(num) in list_num_tables:
+            await rq.delete_table(num)
             await state.update_data(table_number=message.text)
             await message.answer('Столик успешно удалён!')
             await state.clear()
