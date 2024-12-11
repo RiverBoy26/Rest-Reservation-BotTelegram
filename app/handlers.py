@@ -5,6 +5,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
 import app.keyboards as kb
+import app.database.requests as rq
 from app.format_time import isTimeFormat
 from datetime import datetime
 
@@ -12,6 +13,14 @@ router = Router()
 
 class service(StatesGroup):
     timer = State()
+
+class add(StatesGroup):
+    '''Поле номера столика для его добавления'''
+    info_of_table = State()
+
+class delete(StatesGroup):
+    '''Поле номера столика для его удаления'''
+    table_number = State()
 
 class Form1(StatesGroup):
     '''Поле номера столика для редактирования'''
@@ -25,29 +34,61 @@ class Form2(StatesGroup):
 @router.message(F.text == "Вернуться в главное меню")
 async def main_menu(message: Message):
     '''Главное меню'''
+    await rq.set_user(message.from_user.id)
     await message.answer(f"Здравствуйте!\n Выберите действие.", reply_markup=kb.main)
 
 @router.message(Command('help'))
 async def get_help(message: Message):
     '''Сообщение со справочным материалом'''
-    await message.answer('/start - начало работы!')
+    await message.answer('/start - начало работы!\n/add - добавление столика\n/delete - удаление столика')
+class t_add():
+    '''Процесс добавления столика'''
+    @router.message(Command('add'))
+    async def add_table(message: Message, state: FSMContext):
+        '''Добавление столика'''
+        await message.answer('Введите номер столика, кол-во мест и его описание в формате "[№столика] [кол-во мест] [описание]".\nПример ввода: "1 2 window"', reply_markup=kb.rmb)
+        await state.set_state(add.info_of_table)
+    
+    @router.message(add.info_of_table)
+    async def edit_add(message: Message, state: FSMContext):
+        '''Проверка введённой информации и добавление в бд'''
+        info = [message for message in str(message.text).split()]
+        all_tables = await rq.get_tables()
+        list_num_tables = [t.table_number for t in all_tables]
+        if (info[0].isdigit() and int(info[0]) > 0 and int(info[0]) not in list_num_tables) and (info[1].isdigit() and int(info[1]) > 0) and len(info[2]) <= 255:
+            await state.update_data(info_of_table=message.text)
+            await message.answer('Столик успешно добавлен!')
+            await state.clear()
+        else:
+            await message.answer('Некорректный ввод информации! Попробуйте ещё раз!')
+
+class t_delete():
+    @router.message(Command('delete'))
+    async def del_table(message: Message, state: FSMContext):
+        '''Удаление столика'''
+        await message.answer('Введите номер столика, который хотите удалить.', reply_markup=kb.rmb)
+        await state.set_state(delete.table_number)
+    
+    @router.message(delete.table_number)
+    async def edit_del(message: Message, state: FSMContext):
+        num = message.text
+        all_tables = await rq.get_tables()
+        list_num_tables = [t.table_number for t in all_tables]
+        if num.isdigit() and int(num) in list_num_tables:
+            await state.update_data(table_number=message.text)
+            await message.answer('Столик успешно удалён!')
+            await state.clear()
+        else:
+            await message.answer('Этого столика не существует! Попробуйте ещё раз!')
 
 class status_of_tables():
     '''Изменение статуса столика'''
     @router.message(F.text == "Столики")
     async def get_tables(message: Message):
         '''Получение информации о столиках'''
-        await message.answer(f'Сейчас {datetime.now().strftime("%H:%M")}\n' +
-                            'Столик №1 - 3 места, стулья, у окна\n' +
-                            'Столик №2 - 2 места, стулья, рядом с входом\n' +
-                            'Столик №3 - 4 места, диваны и стулья, центральное расположение\n' +
-                            'Столик №4 - 2 места, стулья, у окна\n' +
-                            'Столик №5 - 2 места, около уборной, стулья\n' +
-                            'Столик №6 - 3 места, стулья, центральная зона\n' +
-                            'Столик №7 - 4 места у окна, диваны и стулья\n' +
-                            'Столик №8 - 2 места, стулья, центральная зона\n' +
-                            'Столик №9 - 3 места, стулья, центральная зона\n' +
-                            'Столик №10 - 2 места, стулья, у окна', reply_markup=kb.tables)
+        all_tables = await rq.get_tables()
+        tbl_info = "".join([f"Столик №{t.table_number}: кол-во мест - {t.number_of_seats}, {t.description} - {'Занят❌' if await rq.get_is_occupied_now(t.id) else 'Свободен✅'}\n" for t in all_tables])
+        await message.answer(f'Сейчас {datetime.now().strftime("%H:%M")}\n' + tbl_info, reply_markup=kb.tables)
 
     @router.message(F.text == "Изменить")
     async def table_choose1(message: Message, state: FSMContext):
