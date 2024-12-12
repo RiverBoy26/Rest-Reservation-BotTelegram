@@ -23,6 +23,7 @@ async def get_tables():
         tables = await session.scalars(select(Table).order_by(Table.table_number))
         return tables.all()
 
+
 async def get_is_occupied_now(table_id):
     async with async_session() as session:
         result = await session.scalar(
@@ -33,6 +34,7 @@ async def get_is_occupied_now(table_id):
         )
         return result is not None
 
+
 async def set_table(table_id: int, number_of_seats: int, description: str):
     async with async_session() as session:
         table = Table(table_number=table_id, number_of_seats=number_of_seats, description=description)
@@ -41,6 +43,7 @@ async def set_table(table_id: int, number_of_seats: int, description: str):
         session.add(is_occupied_now)
         await session.commit()
 
+
 async def delete_table(table_id: int):
     async with async_session() as session:
         table_to_delete = await session.get(Table, table_id)
@@ -48,3 +51,22 @@ async def delete_table(table_id: int):
         is_occupied_now_delete = await session.get(Tables_is_occupied_now, table_id)
         await session.delete(is_occupied_now_delete)
         await session.commit()
+
+
+async def set_reservation(table_id: int, hour: int, minute: int):
+    async with async_session() as session:
+        set_table_reservation = Table_reservation(table_id=table_id, hour=hour, minutes=minute)
+        session.add(set_table_reservation)
+        await session.commit()
+
+
+async def get_reservation(table_id: int):
+    async with async_session() as session:
+        try:
+            table = await session.scalar(select(Table_reservation).where(Table_reservation.table_id == table_id))
+
+            if not table:
+                return "Отсутствует расписание"
+        except Exception as e:
+            await session.rollback()
+            raise e

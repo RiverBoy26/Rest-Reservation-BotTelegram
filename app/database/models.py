@@ -44,7 +44,7 @@ class Table_reservation(Base):
     date: Mapped[Date] = mapped_column(Date, nullable=True)
     hour: Mapped[int] = mapped_column(nullable=True)
     minutes: Mapped[int] = mapped_column(nullable=True)
-    is_occupied: Mapped[bool] = mapped_column(default=False, server_default="0")
+    is_occupied: Mapped[bool] = mapped_column(default=True, server_default="0")
 
 
 async def async_mainbd():

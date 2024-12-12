@@ -134,10 +134,13 @@ class schedule():
     @router.message(Form2.table_id)
     async def edit_table2(message: Message, state: FSMContext):
         '''Расписание столика'''
-        if message.text.isdigit() and 0 < int(message.text) < 11:
+        all_tables = await rq.get_tables()
+        if message.text.isdigit() and 0 < int(message.text) <= len(all_tables):
             await state.update_data(table_id=message.text)
+            answer = await rq.get_reservation(message.text)
             await message.answer(f"Сейчас {datetime.now().strftime('%H:%M')}\n" +
-                                 f"Расписание брони столика №{await state.get_value('table_id')}:", reply_markup=kb.booking)
+                                 f"Расписание брони столика №{await state.get_value('table_id')}:\n"
+                                 f"{answer}", reply_markup=kb.booking)
             await state.set_state(Form2.status)
         else:
             await message.answer("Введите номер столика ещё раз!")
@@ -147,12 +150,14 @@ class booking():
     @router.message(and_f(F.text == "Забронировать", or_f(Form1.status, Form2.status)))
     async def bronya_tables(message: Message, state: FSMContext):
         state.update_data(status=message.text)
-        await message.answer("Укажите время брони!(формат: '01:24')", reply_markup=kb.go_back)
+        await message.answer("Укажите время брони! (формат: '01 24')", reply_markup=kb.go_back)
         await state.set_state(service.timer)
     
     @router.message(service.timer)
     async def create_booking(message: Message, state: FSMContext):
-        if isTimeFormat(message.text):
+        if True:
+            info = [message for message in str(message.text).split()]
+            await rq.set_reservation(await state.get_value('table_id'), info[0], info[1])
             state.update_data(timer=message.text)
             await message.answer(f"Бронь для столика №{await state.get_value('table_id')} создана")
             await state.clear()
