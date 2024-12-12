@@ -33,7 +33,6 @@ async def get_is_occupied_now(table_id):
         )
         return result is not None
 
-
 async def set_table(table_id: int, number_of_seats: int, description: str):
     async with async_session() as session:
         table = Table(table_number=table_id, number_of_seats=number_of_seats, description=description)
