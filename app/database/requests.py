@@ -1,6 +1,7 @@
 from app.database.models import async_session
 from app.database.models import User, Table, Tables_is_occupied_now, Table_reservation
 from sqlalchemy import select
+from sqlalchemy.sql import update
 
 
 # Добавление пользователя в бд
@@ -29,7 +30,7 @@ async def get_is_occupied_now(table_id):
         result = await session.scalar(
             select(Tables_is_occupied_now).where(
                 Tables_is_occupied_now.table_id == table_id,
-                Tables_is_occupied_now.occupied_now is True
+                Tables_is_occupied_now.occupied_now == 1
             )
         )
         return result is not None
@@ -87,9 +88,7 @@ async def get_time_reservation(table_id: int):
 async def delete_reservation(table_id: int, d_time: str):
     async with async_session() as session:
         hour = int(d_time[0] + d_time[1])
-        print(hour)
         minutes = int(d_time[3] + d_time[4])
-        print(minutes)
 
         query = (select(Table_reservation).where(
                     Table_reservation.table_id == table_id,
@@ -99,4 +98,16 @@ async def delete_reservation(table_id: int, d_time: str):
         result = await session.execute(query)
         reservation_to_delete = result.scalar_one_or_none()
         await session.delete(reservation_to_delete)
+        await session.commit()
+
+async def set_status_free(table_id: int):
+    async with async_session() as session:
+        status_update = (update(Tables_is_occupied_now).values(occupied_now=0).where(Tables_is_occupied_now.table_id == table_id))
+        await session.execute(status_update)
+        await session.commit()
+
+async def set_status_busy(table_id: int):
+    async with async_session() as session:
+        status_update = (update(Tables_is_occupied_now).values(occupied_now=1).where(Tables_is_occupied_now.table_id == table_id))
+        await session.execute(status_update)
         await session.commit()
