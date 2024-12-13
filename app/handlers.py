@@ -7,13 +7,15 @@ from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 import app.database.requests as rq
 from app.format_time import isTimeFormat, get_nearest_time
-from datetime import datetime
+import datetime
 
 router = Router()
 
 class service(StatesGroup):
     '''Время брони'''
     timer = State()
+    surname = State()
+    chrono = State()
 
 class add(StatesGroup):
     '''Поле номера столика для его добавления'''
@@ -38,7 +40,8 @@ class Form2(StatesGroup):
 async def main_menu(message: Message):
     '''Главное меню'''
     await rq.set_user(message.from_user.id)
-    await message.answer(f"Здравствуйте!\nВыберите действие.", reply_markup=kb.main)
+    await message.answer("Добро пожаловать в систему бронирования столиков\n"+ 
+                         "✨Rest-Reservation✨\nВыберите действие.\nНажмите /help для предоставления всех команд.", reply_markup=kb.main)
 
 @router.message(Command('help'))
 async def get_help(message: Message):
@@ -93,13 +96,15 @@ class status_of_tables():
     async def get_tables(message: Message):
         '''Получение информации о столиках'''
         all_tables = await rq.get_tables()
-        tbl_info = f'Сейчас {datetime.now().strftime("%H:%M")}\n'
-        for t in all_tables:
-            lst_time = await rq.get_time_reservation(t.table_number)
-            tbl_info += f"Столик №{t.table_number}: кол-во мест - {t.number_of_seats}, {t.description} - "
-            tbl_info += f"{'Занят❌' if await rq.get_is_occupied_now(t.table_number) else 'Свободен✅'}" 
-            tbl_info += f" (Бронь🕖: {await get_nearest_time(t.table_number) if len(lst_time) > 0 else 'отсутствует'})\n"
-        await message.answer(tbl_info, reply_markup=kb.tables)
+        tbl_info = f'Сейчас {datetime.datetime.now().strftime("%H:%M")}\n'
+        if len(all_tables) != 0: 
+            for t in all_tables:
+                lst_time = await rq.get_time_reservation(t.table_number)
+                tbl_info += f"Столик №{t.table_number}: кол-во мест - {t.number_of_seats}, {t.description} - "
+                tbl_info += f"{'Занят❌' if await rq.get_is_occupied_now(t.table_number) else 'Свободен✅'}" 
+                tbl_info += f" (Бронь🕖: {await get_nearest_time(t.table_number) if len(lst_time) > 0 else 'отсутствует'})\n"
+            await message.answer(tbl_info, reply_markup=kb.tables)
+        await message.answer(tbl_info + "Столиков нет\n/add - добавить столик!", reply_markup=kb.go_back)
 
     @router.message(F.text == "Изменить")
     async def table_choose1(message: Message, state: FSMContext):
@@ -110,7 +115,8 @@ class status_of_tables():
     @router.message(Form1.table_id)
     async def edit_table1(message: Message, state: FSMContext):
         '''Изменение параметров столика'''
-        if message.text.isdigit() and 0 < int(message.text) < 11:
+        all_tables = await rq.get_tables()
+        if message.text.isdigit() and 0 < int(message.text) and int(message.text) in [t.table_number for t in all_tables]:
             await state.update_data(table_id=message.text)
             await message.answer(f"Выберите действие для столика №{await state.get_value('table_id')}:", reply_markup=kb.table_info)
             await state.set_state(Form1.status)
@@ -142,10 +148,10 @@ class schedule():
     async def edit_table2(message: Message, state: FSMContext):
         '''Расписание столика'''
         all_tables = await rq.get_tables()
-        if message.text.isdigit() and 0 < int(message.text) <= len(all_tables):
+        if message.text.isdigit() and 0 < int(message.text) and int(message.text) in [t.table_number for t in all_tables]:
             await state.update_data(table_id=message.text)
             answer = await rq.get_reservation(message.text)
-            await message.answer(f"Сейчас {datetime.now().strftime('%H:%M')}\n" +
+            await message.answer(f"Сейчас {datetime.datetime.now().strftime('%H:%M')}\n" +
                                  f"Расписание брони столика №{await state.get_value('table_id')}:\n"
                                  f"{answer}", reply_markup=kb.booking)
             await state.set_state(Form2.status)
@@ -156,20 +162,41 @@ class booking():
     '''Здесь прописаны хэндлеры для создания и удаления брони'''
     @router.message(and_f(F.text == "Забронировать", or_f(Form1.status, Form2.status)))
     async def bronya_tables(message: Message, state: FSMContext):
-        state.update_data(status=message.text)
+        await state.update_data(status=message.text)
         await message.answer("Укажите время брони! (формат: '01 24')", reply_markup=kb.go_back)
         await state.set_state(service.timer)
     
     @router.message(service.timer)
     async def create_booking(message: Message, state: FSMContext):
         if isTimeFormat(message.text):
-            info = [message for message in str(message.text).split()]
-            await rq.set_reservation(await state.get_value('table_id'), info[0], info[1])
-            state.update_data(timer=message.text)
-            await message.answer(f"Бронь для столика №{await state.get_value('table_id')} создана")
-            await state.clear()
+            await state.update_data(timer=message.text)
+            await message.answer(f"Введите фамилию клиента!")
+            await state.set_state(service.surname)
         else:
             await message.answer("Некорректный формат времени. Попробуйте ещё раз!")
+
+    @router.message(service.surname)
+    async def create_booking(message: Message, state: FSMContext):
+        await state.update_data(surname=message.text)
+        await message.answer(f"Введите продолжительность брони (формат: '01 24')")
+        await state.set_state(service.chrono)
+
+    @router.message(service.chrono)
+    async def create_booking(message: Message, state: FSMContext):
+        if not isTimeFormat(message.text):
+            await message.answer("Некорректный формат времени. Попробуйте ещё раз!")
+        else:
+            duration = datetime.datetime.strptime(message.text, '%H %M')
+            if duration.hour > 3:
+                await message.answer("Превышен лимит времени бронирования. Попробуйте ещё раз!")
+            else:
+                duration_booking = datetime.datetime.strptime(await state.get_value('timer'), '%H %M')
+                await rq.set_reservation(await state.get_value('table_id'), int(duration_booking.hour), int(duration_booking.minute), 
+                                         await state.get_value('surname'), int(duration.hour), int(duration.minute)) 
+                await state.update_data(chrono=message.text)
+                await message.answer(f"Бронь для столика №{await state.get_value('table_id')} создана")
+                await state.clear()
+            
     
     @router.message(and_f(F.text == "Удалить бронь", Form2.status))
     async def del_booking(message: Message, state: FSMContext):
@@ -189,6 +216,6 @@ class booking():
         await rq.delete_reservation(await state.get_value('table_id'), date[2])
         await callback.message.edit_text('Данное время удалено!')
         answer = await rq.get_reservation(await state.get_value('table_id'))
-        await callback.message.answer(f"Сейчас {datetime.now().strftime('%H:%M')}\n" +
+        await callback.message.answer(f"Сейчас {datetime.datetime.now().strftime('%H:%M')}\n" +
                                       f"Расписание брони столика №{await state.get_value('table_id')}:\n"
                                       f"{answer}", reply_markup=kb.booking)
