@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 
 import app.keyboards as kb
 import app.database.requests as rq
-from app.format_time import isTimeFormat
+from app.format_time import isTimeFormat, get_nearest_time
 from datetime import datetime
 
 router = Router()
@@ -93,8 +93,13 @@ class status_of_tables():
     async def get_tables(message: Message):
         '''Получение информации о столиках'''
         all_tables = await rq.get_tables()
-        tbl_info = "".join([f"Столик №{t.table_number}: кол-во мест - {t.number_of_seats}, {t.description} - {'Занят❌' if await rq.get_is_occupied_now(t.id) else 'Свободен✅'}\n" for t in all_tables])
-        await message.answer(f'Сейчас {datetime.now().strftime("%H:%M")}\n' + tbl_info, reply_markup=kb.tables)
+        tbl_info = f'Сейчас {datetime.now().strftime("%H:%M")}\n'
+        for t in all_tables:
+            lst_time = await rq.get_time_reservation(t.table_number)
+            tbl_info += f"Столик №{t.table_number}: кол-во мест - {t.number_of_seats}, {t.description} - "
+            tbl_info += f"{'Занят❌' if await rq.get_is_occupied_now(t.table_number) else 'Свободен✅'}" 
+            tbl_info += f" (Бронь🕖: {await get_nearest_time(t.table_number) if len(lst_time) > 0 else 'отсутствует'})\n"
+        await message.answer(tbl_info, reply_markup=kb.tables)
 
     @router.message(F.text == "Изменить")
     async def table_choose1(message: Message, state: FSMContext):
@@ -115,12 +120,14 @@ class status_of_tables():
     @router.message(and_f(F.text == "Свободен", Form1.status))
     async def status_free(message: Message, state: FSMContext):
         await state.update_data(status=message.text)
+        await rq.set_status_free(int(await state.get_value('table_id')))
         await message.answer(f"Для столика №{await state.get_value('table_id')} задан статус СВОБОДЕН", reply_markup=kb.go_back)
         await state.clear()
 
     @router.message(and_f(F.text == "Занят", Form1.status))
     async def status_busy(message: Message, state: FSMContext):
         await state.update_data(status=message.text)
+        await rq.set_status_busy(int(await state.get_value('table_id')))
         await message.answer(f"Для столика №{await state.get_value('table_id')} задан статус ЗАНЯТ", reply_markup=kb.go_back)
 
 class schedule():
@@ -143,7 +150,7 @@ class schedule():
                                  f"{answer}", reply_markup=kb.booking)
             await state.set_state(Form2.status)
         else:
-            await message.answer("Введите номер столика ещё раз!")
+            await message.answer("Данного столика не существует! Введите номер столика ещё раз!")
 
 class booking():
     '''Здесь прописаны хэндлеры для создания и удаления брони'''
@@ -168,8 +175,11 @@ class booking():
     async def del_booking(message: Message, state: FSMContext):
         await state.update_data(status=message.text)
         delete_time = await rq.get_time_reservation(await state.get_value('table_id'))
-        await message.answer("Выберите время для удаления брони:", reply_markup=kb.go_back)
-        await message.answer("Забронированные часы", reply_markup=kb.delete_time(delete_time))
+        if len(delete_time) > 0:
+            await message.answer("Выберите время для удаления брони:", reply_markup=kb.go_back)
+            await message.answer("Забронированные часы", reply_markup=kb.delete_time(delete_time))
+        else:
+            await message.answer(f"У столика №{await state.get_value('table_id')} нет забронированного времени", reply_markup=kb.booking)
 
     @router.callback_query(F.data.startswith('d_time_'))
     async def conf_del(callback: CallbackQuery, state: FSMContext):
