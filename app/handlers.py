@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 
 import app.keyboards as kb
 import app.database.requests as rq
-from app.format_time import isTimeFormat
+from app.format_time import isTimeFormat, get_nearest_time
 from datetime import datetime
 
 router = Router()
@@ -93,8 +93,13 @@ class status_of_tables():
     async def get_tables(message: Message):
         '''Получение информации о столиках'''
         all_tables = await rq.get_tables()
-        tbl_info = "".join([f"Столик №{t.table_number}: кол-во мест - {t.number_of_seats}, {t.description} - {'Занят❌' if await rq.get_is_occupied_now(t.table_number) else 'Свободен✅'}\n" for t in all_tables])
-        await message.answer(f'Сейчас {datetime.now().strftime("%H:%M")}\n' + tbl_info, reply_markup=kb.tables)
+        tbl_info = f'Сейчас {datetime.now().strftime("%H:%M")}\n'
+        for t in all_tables:
+            lst_time = await rq.get_time_reservation(t.table_number)
+            tbl_info += f"Столик №{t.table_number}: кол-во мест - {t.number_of_seats}, {t.description} - "
+            tbl_info += f"{'Занят❌' if await rq.get_is_occupied_now(t.table_number) else 'Свободен✅'}" 
+            tbl_info += f" (Бронь🕖: {await get_nearest_time(t.table_number) if len(lst_time) > 0 else 'отсутствует'})\n"
+        await message.answer(tbl_info, reply_markup=kb.tables)
 
     @router.message(F.text == "Изменить")
     async def table_choose1(message: Message, state: FSMContext):
