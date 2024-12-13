@@ -1,5 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+import app.database.requests as rq
 
 rmb = ReplyKeyboardRemove()
 
@@ -37,8 +38,7 @@ booking = ReplyKeyboardMarkup(keyboard=[
                             resize_keyboard=True,
                             input_field_placeholder="Расписание")
 
-def delete_time():
-    del_t = ['12:00', '14:30', '16:50', '17:40', '18:20']
+def delete_time(delete_time):
     choose_del = InlineKeyboardBuilder()
-    [choose_del.add(InlineKeyboardButton(text=t, callback_data='d_time')) for t in del_t]
+    [choose_del.add(InlineKeyboardButton(text=t, callback_data=f'd_time_{t}')) for t in delete_time]
     return choose_del.adjust(2).as_markup()
