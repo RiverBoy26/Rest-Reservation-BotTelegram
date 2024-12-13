@@ -104,7 +104,8 @@ class status_of_tables():
                 tbl_info += f"{'Занят❌' if await rq.get_is_occupied_now(t.table_number) else 'Свободен✅'}" 
                 tbl_info += f" (Бронь🕖: {await get_nearest_time(t.table_number) if len(lst_time) > 0 else 'отсутствует'})\n"
             await message.answer(tbl_info, reply_markup=kb.tables)
-        await message.answer(tbl_info + "Столиков нет\n/add - добавить столик!", reply_markup=kb.go_back)
+        else:
+            await message.answer(tbl_info + "Столиков нет\n/add - добавить столик!", reply_markup=kb.go_back)
 
     @router.message(F.text == "Изменить")
     async def table_choose1(message: Message, state: FSMContext):
