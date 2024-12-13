@@ -41,10 +41,12 @@ class Table_reservation(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     table_id: Mapped[int] = mapped_column(ForeignKey('tables.table_number'))
-    date: Mapped[Date] = mapped_column(Date, nullable=True)
-    hour: Mapped[int] = mapped_column(nullable=True)
-    minutes: Mapped[int] = mapped_column(nullable=True)
-    is_occupied: Mapped[bool] = mapped_column(default=True, server_default="0")
+    surname: Mapped[str] = mapped_column(String(255))
+    hour: Mapped[int] = mapped_column(nullable=False)
+    end_hour: Mapped[int] = mapped_column(nullable=False)
+    minutes: Mapped[int] = mapped_column(nullable=False)
+    end_minutes: Mapped[int] = mapped_column(nullable=False)
+    is_occupied: Mapped[bool] = mapped_column(default=True, server_default="1")
 
 
 async def async_mainbd():
