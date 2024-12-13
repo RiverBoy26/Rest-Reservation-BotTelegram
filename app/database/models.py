@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, String, ForeignKey, Date
+from sqlalchemy import BigInteger, String, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
@@ -33,7 +33,8 @@ class Tables_is_occupied_now(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     table_id: Mapped[int] = mapped_column(ForeignKey('tables.table_number'))
-    occupied_now: Mapped[bool] = mapped_column(default=False, server_default="0")
+    occupied_now: Mapped[bool] = mapped_column(default=False,
+                                               server_default="0")
 
 
 class Table_reservation(Base):

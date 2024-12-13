@@ -14,7 +14,9 @@ async def get_nearest_time(table_id):
     now = datetime.datetime.now()
     for t in lst_time:
         booking_datetime = datetime.datetime.strptime(t, "%H:%M")
-        booking_datetime = now.replace(hour=booking_datetime.time().hour, minute=booking_datetime.time().minute)
+        booking_datetime = now.replace(hour=booking_datetime.time().hour,
+                                       minute=booking_datetime.time().minute)
         if (now < booking_datetime):
-            return booking_datetime.strftime("%H:%M")
-    return ""
+            fin = await rq.get_time_surname_and_chrono(table_id, booking_datetime.hour, booking_datetime.minute)
+            return f"{booking_datetime.strftime('%H:%M')}, {fin}"
+    return "отсутствует"
